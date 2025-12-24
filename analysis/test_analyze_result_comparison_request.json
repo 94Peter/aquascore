@@ -1,0 +1,28 @@
+{
+  "target_result": {
+    "athlete_name": "陳選手",
+    "record_time": 22.52,
+    "rank": 2
+  },
+  "competition_results": [
+    {
+      "athlete_name": "張選手",
+      "record_time": 22.41,
+      "rank": 1
+    },
+    {
+      "athlete_name": "李選手",
+      "record_time": 22.68,
+      "rank": 3
+    },
+    {
+      "athlete_name": "王選手",
+      "record_time": 22.75,
+      "rank": 4
+    }
+  ],
+  "records": {
+    "national_record": 22.10,
+    "games_record": 22.45
+  }
+}

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaScore Dashboard - High-Fidelity Mockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* cool-gray-50 */
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 220px;
+            background-color: #334155; /* cool-gray-800 */
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+            line-height: 1.5;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .sparkline {
+            width: 120px;
+            height: 30px;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div id="app" class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+
+        <!-- 2.1 Main Interface Structure: Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 border-b border-slate-200">
+            <div class="flex items-center gap-3 mb-4 md:mb-0">
+                <div class="w-10 h-10 bg-blue-600/10 text-blue-600 flex items-center justify-center rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m15.5 15.5-3-2-3 2"/><path d="M15.5 9.5 12 8l-3.5 1.5"/><path d="m8.5 12.5 3.5 1.5 3-1.5"/></svg>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900">AquaScore 儀表板</h1>
+            </div>
+            <div class="w-full md:w-auto">
+                <label for="athlete-search" class="text-sm font-medium text-slate-600">運動員姓名</label>
+                <div class="relative mt-1">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                    </div>
+                    <input type="text" id="athlete-search" value="王小明" class="w-full md:w-64 bg-white border border-slate-300 rounded-lg py-2 pl-9 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+            </div>
+        </header>
+
+        <main class="mt-6">
+            <!-- Tab Controller -->
+            <div class="border-b border-slate-200">
+                <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                    <button id="tab-overview" class="whitespace-nowrap py-3 px-1 border-b-2 font-semibold text-sm text-blue-600 border-blue-600" aria-current="page">
+                        整體表現分析
+                    </button>
+                    <button id="tab-competition" class="whitespace-nowrap py-3 px-1 border-b-2 font-semibold text-sm text-slate-500 border-transparent hover:text-slate-700 hover:border-slate-300">
+                        特定競賽查詢
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="content-overview" class="mt-6">
+                <!-- 2.2 Overall Performance Analysis: Upper Part (Personal Bests) -->
+                <section>
+                    <h2 class="text-xl font-bold text-slate-900 mb-1">🏆 個人最佳成績總覽</h2>
+                    <p class="text-sm text-slate-500 mb-4">All-Time Personal Bests. 點擊卡片以深入分析項目表現。</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- PB Card -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 hover:border-blue-500 hover:shadow-md transition-all duration-300 cursor-pointer">
+                            <div class="flex justify-between items-start">
+                                <h3 class="text-lg font-semibold text-slate-800">🏊 50公尺自由式</h3>
+                                <button class="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                    深入分析 <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            <div class="mt-4 space-y-3">
+                                <div class="flex items-center gap-3">
+                                    <p class="text-2xl font-bold text-amber-500">
+                                        <span class="text-lg mr-1">⭐</span>24.98s
+                                    </p>
+                                    <div class="text-xs text-slate-500">
+                                        於 2024/10/19
+                                        <span class="ml-2 inline-flex items-center gap-1.5 font-semibold text-red-600">
+                                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                            久未更新
+                                            <div class="tooltip">
+                                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i>
+                                                <span class="tooltiptext">此燈號反映您突破個人極限的頻率。紅燈可能表示您遇到了瓶頸期，是時候檢視訓練計畫了。</span>
+                                            </div>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                                    <div class="flex items-center gap-1.5 font-medium text-slate-600">
+                                        穩定度: <span class="text-yellow-600 font-semibold flex items-center gap-1">🟡 中等
+                                            <div class="tooltip"><i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i><span class="tooltiptext">用於評估您的表現是否可靠。高穩定度代表實力已穩固；低穩定度則表示PB可能帶有偶然性。</span></div>
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 font-medium text-slate-600">
+                                        近三場趨勢: <span class="font-semibold flex items-center gap-1">↔ 穩定 (+0.33s vs PB)
+                                            <div class="tooltip"><i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i><span class="tooltiptext">快速判斷您最近的短期狀態。箭頭顯示您是處於上升、下降還是平穩期。</span></div>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                                    <div class="flex items-center gap-2 font-medium text-slate-600">
+                                        近一年表現:
+                                        <svg class="sparkline" viewBox="0 0 120 30" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M 0 15 L 10 20 L 20 12 L 30 18 L 40 10 L 50 5 L 60 2 L 70 8 L 80 15 L 90 25 L 100 20 L 110 15 L 120 18" fill="none" stroke="#3b82f6" stroke-width="2"/>
+                                        </svg>
+                                        <div class="tooltip"><i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i><span class="tooltiptext">提供一個長期的宏觀視角，回顧過去一整年的表現起伏與賽季週期。</span></div>
+                                    </div>
+                                    <div class="font-medium text-slate-600">平均差距: <span class="font-semibold">+0.44s vs PB</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Add another placeholder card -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 flex flex-col justify-center items-center text-slate-400 border-dashed">
+                             <i data-lucide="plus" class="w-8 h-8"></i>
+                             <p class="mt-2 text-sm font-medium">其他項目卡片</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2.2 Overall Performance Analysis: Lower Part (Drill-down Detail) -->
+                <section class="mt-10">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                        <h2 class="text-xl font-bold text-slate-900 mb-2 md:mb-0">🎯 項目洞察分析: <span class="text-blue-600">50公尺自由式</span></h2>
+                        <div class="flex items-center gap-4 text-sm">
+                            <div class="flex items-center gap-2">
+                                <label for="time-range" class="font-medium text-slate-600">時間區間:</label>
+                                <select id="time-range" class="bg-white border border-slate-300 rounded-md py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option>過去一年</option>
+                                    <option>過去六個月</option>
+                                    <option>全部</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="show-avg" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                <label for="show-avg" class="font-medium text-slate-600">顯示移動平均</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                        <!-- Left Panel: Charts -->
+                        <div class="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+                            <h3 class="font-semibold text-slate-800">📈 成績趨勢圖</h3>
+                            <p class="text-xs text-slate-500">滑鼠懸停數據點可看詳細賽事資訊</p>
+                            <div class="mt-4 h-64 bg-slate-50 rounded-lg flex justify-center items-center text-slate-400">
+                                <i data-lucide="line-chart" class="w-16 h-16 text-slate-300"></i>
+                            </div>
+                            <div class="mt-6">
+                                <h4 class="font-semibold text-slate-800 text-sm">近三場 vs PB 差距</h4>
+                                                            <div class="mt-2 h-32 bg-slate-50 rounded-lg flex justify-center items-center text-slate-400">
+                                                                <i data-lucide="bar-chart-2" class="w-12 h-12 text-slate-300"></i>
+                                                            </div>                            </div>
+                        </div>
+
+                        <!-- Right Panel: Insights -->
+                        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+                             <h3 class="font-semibold text-slate-800 mb-4">💡 最近表現分析</h3>
+                             <div class="space-y-4 text-sm">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-slate-600">最近成績</span>
+                                    <span class="font-semibold">25.25s <span class="text-red-500 font-medium">(+0.27s vs PB)</span></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-slate-600 flex items-center gap-1">近三場平均 <div class="tooltip"><i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i><span class="tooltiptext">衡量您當前「平均實力」的指標，更能反映您目前穩定的實力水平。</span></div></span>
+                                    <span class="font-semibold">25.31s <span class="text-red-500 font-medium">(+0.33s vs PB)</span></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-slate-600">近三場趨勢</span>
+                                    <span class="font-semibold inline-flex items-center gap-1">穩定持平 [↔]</span>
+                                </div>
+                                <hr class="border-slate-200">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-slate-600 flex items-center gap-1">穩定度分數 <div class="tooltip"><i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i><span class="tooltiptext">評估您在特定賽季或時間段內的表現一致性。分數越高，代表實力越成熟。</span></div></span>
+                                    <span class="font-semibold text-green-600">85<span class="text-slate-500 font-normal">/100</span></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-slate-600 flex items-center gap-1">巔峰狀態評估 <div class="tooltip"><i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i><span class="tooltiptext">判斷您是否處於「出成績」的巔峰區間。若近期成績穩定在PB的2%以內，是參加重要賽事的好時機。</span></div></span>
+                                    <span class="font-semibold inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                        <i data-lucide="trending-up" class="w-4 h-4"></i> 接近
+                                    </span>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div id="content-competition" class="mt-6 hidden">
+                <!-- 2.3 Specific Competition Query -->
+                <section>
+                    <h2 class="text-xl font-bold text-slate-900 mb-1">🏊 特定競賽查詢</h2>
+                    <p class="text-sm text-slate-500 mb-4">查詢在特定比賽中的所有項目成績，並與其他選手進行對比。</p>
+                    
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+                        <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
+                            <h3 class="font-semibold text-slate-800 flex-shrink-0">篩選條件:</h3>
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-sm w-full md:w-auto">
+                                <div class="w-full sm:w-auto">
+                                    <label for="comp-year" class="font-medium text-slate-600">年份</label>
+                                    <select id="comp-year" class="mt-1 w-full bg-white border border-slate-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option>2025</option>
+                                        <option>2024</option>
+                                    </select>
+                                </div>
+                                <div class="w-full sm:w-auto">
+                                    <label for="comp-name" class="font-medium text-slate-600">競賽名稱</label>
+                                    <select id="comp-name" class="mt-1 w-full bg-white border border-slate-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option>全國大專校院運動會</option>
+                                        <option>全國中等學校運動會</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="mt-3 text-xs text-slate-500 flex items-center gap-1.5">
+                            <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                            <span>請先選擇年份，以動態載入該年度的競賽列表。</span>
+                        </p>
+
+                        <div class="mt-6 flow-root">
+                             <div class="-mx-5 -my-2 overflow-x-auto">
+                                <div class="inline-block min-w-full py-2 align-middle">
+                                    <table class="min-w-full divide-y divide-slate-200">
+                                        <thead class="bg-slate-50">
+                                            <tr>
+                                                <th scope="col" class="py-3.5 pl-5 pr-3 text-left text-sm font-semibold text-slate-900">賽事日期</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">項目</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">組別</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">個人成績</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">名次</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">成績對比</th>
+                                                <th scope="col" class="relative py-3.5 pl-3 pr-5"><span class="sr-only">備註</span></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200 bg-white">
+                                            <tr>
+                                                <td class="whitespace-nowrap py-4 pl-5 pr-3 text-sm font-medium text-slate-900">2025/04/26</td>
+                                                <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-600 font-semibold">50公尺自由式</td>
+                                                <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">公開男子組</td>
+                                                <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-800 font-bold">25.15s</td>
+                                                <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-800 font-bold">8</td>
+                                                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                                                    <button id="view-comparison-btn" class="font-semibold text-blue-600 hover:text-blue-800">查看</button>
+                                                </td>
+                                                <td class="whitespace-nowrap py-4 pl-3 pr-5 text-sm"></td>
+                                            </tr>
+                                            <!-- More rows... -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Comparison Modal -->
+    <div id="comparison-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="bg-slate-50 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex-shrink-0 p-5 border-b border-slate-200 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">對比分析: 50公尺自由式 (公開男子組)</h2>
+                    <p class="text-sm text-slate-500">114年全國大專校院運動會</p>
+                </div>
+                <button id="close-modal-btn" class="p-1 rounded-full text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Content -->
+            <div class="flex-grow p-6 overflow-y-auto space-y-8">
+                <!-- Charts Section -->
+                <div>
+                    <h3 class="font-semibold text-slate-800 mb-1 flex items-center gap-1.5">📈 成績分佈圖 & 差距柱狀圖 <div class="tooltip"><i data-lucide="info" class="w-4 h-4 text-slate-400"></i><span class="tooltiptext">快速定位您在賽場上的競爭位置。分佈圖看清全貌，差距圖聚焦於您與他人的秒數差距。</span></div></h3>
+                    <div class="mt-4 p-4 h-56 bg-white rounded-lg border border-slate-200/80 flex justify-center items-center text-slate-400">
+                        <i data-lucide="scatter-chart" class="w-16 h-16 text-slate-300"></i>
+                    </div>
+                    <div class="mt-4 p-4 h-48 bg-white rounded-lg border border-slate-200/80 flex justify-center items-center text-slate-400">
+                        <i data-lucide="bar-chart-horizontal" class="w-12 h-12 text-slate-300"></i>
+                    </div>
+                </div>
+
+                <!-- Detailed Data Section -->
+                <div>
+                    <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-1.5">📋 詳細數據</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
+                        <div class="bg-white p-3 rounded-lg border border-slate-200/80">
+                            <p class="text-sm text-slate-500">您的成績 (第 8 名)</p>
+                            <p class="text-xl font-bold text-blue-600">25.15s</p>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg border border-slate-200/80">
+                            <p class="text-sm text-slate-500 flex items-center justify-center gap-1">🏆 大會紀錄 <div class="tooltip"><i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i><span class="tooltiptext">衡量您與頂尖水平的距離。這個差距是您挑戰更高殿堂的具體目標。</span></div></p>
+                            <p class="text-xl font-bold text-slate-800">23.46s <span class="text-sm font-medium text-green-600">(-1.69s)</span></p>
+                        </div>
+                         <div class="bg-white p-3 rounded-lg border border-slate-200/80">
+                            <p class="text-sm text-slate-500 flex items-center justify-center gap-1">🌟 全國紀錄 <div class="tooltip"><i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i><span class="tooltiptext">衡量您與頂尖水平的距離。這個差距是您挑戰更高殿堂的具體目標。</span></div></p>
+                            <p class="text-xl font-bold text-purple-800">22.10s <span class="text-sm font-medium text-green-600">(-3.05s)</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="flow-root">
+                        <div class="-mx-6 -my-2 overflow-x-auto">
+                            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                                <table class="min-w-full divide-y divide-slate-200">
+                                    <thead>
+                                        <tr>
+                                            <th class="py-3.5 pl-6 pr-3 text-left text-sm font-semibold text-slate-900">名次</th>
+                                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">姓名</th>
+                                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">成績</th>
+                                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900 flex items-center gap-1">
+                                                與您差距
+                                                <div class="tooltip"><i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i><span class="tooltiptext">精確計算您與特定名次選手的秒數差距，可設定具體的追趕目標。</span></div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200">
+                                        <tr>
+                                            <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-amber-500">1</td>
+                                            <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">張三</td>
+                                            <td class="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-800">23.50s</td>
+                                            <td class="whitespace-nowrap px-3 py-4 text-sm font-semibold text-green-600">
+                                                <span class="inline-flex items-center gap-1.5">-1.65s <i data-lucide="chevrons-up" class="w-4 h-4"></i></span>
+                                            </td>
+                                        </tr>
+                                        <tr class="bg-blue-50">
+                                            <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-semibold text-blue-700">8</td>
+                                            <td class="whitespace-nowrap px-3 py-4 text-sm font-semibold text-blue-700">王小明 (您)</td>
+                                            <td class="whitespace-nowrap px-3 py-4 text-sm font-bold text-blue-700">25.15s</td>
+                                            <td class="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-700">0.00s</td>
+                                        </tr>
+                                         <tr>
+                                            <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-slate-800">11</td>
+                                            <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">林九</td>
+                                            <td class="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-800">25.40s</td>
+                                            <td class="whitespace-nowrap px-3 py-4 text-sm font-semibold text-red-600">
+                                                <span class="inline-flex items-center gap-1.5">+0.25s <i data-lucide="chevron-down" class="w-4 h-4"></i></span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        lucide.createIcons();
+
+        // Tab functionality
+        const tabOverview = document.getElementById('tab-overview');
+        const tabCompetition = document.getElementById('tab-competition');
+        const contentOverview = document.getElementById('content-overview');
+        const contentCompetition = document.getElementById('content-competition');
+
+        tabOverview.addEventListener('click', () => {
+            // Activate overview tab
+            tabOverview.classList.add('text-blue-600', 'border-blue-600');
+            tabOverview.classList.remove('text-slate-500', 'border-transparent', 'hover:text-slate-700', 'hover:border-slate-300');
+            // Deactivate competition tab
+            tabCompetition.classList.add('text-slate-500', 'border-transparent', 'hover:text-slate-700', 'hover:border-slate-300');
+            tabCompetition.classList.remove('text-blue-600', 'border-blue-600');
+            // Show overview content
+            contentOverview.classList.remove('hidden');
+            contentCompetition.classList.add('hidden');
+        });
+
+        tabCompetition.addEventListener('click', () => {
+            // Deactivate overview tab
+            tabOverview.classList.remove('text-blue-600', 'border-blue-600');
+            tabOverview.classList.add('text-slate-500', 'border-transparent', 'hover:text-slate-700', 'hover:border-slate-300');
+            // Activate competition tab
+            tabCompetition.classList.remove('text-slate-500', 'border-transparent', 'hover:text-slate-700', 'hover:border-slate-300');
+            tabCompetition.classList.add('text-blue-600', 'border-blue-600');
+            // Show competition content
+            contentOverview.classList.add('hidden');
+            contentCompetition.classList.remove('hidden');
+        });
+
+        // Modal functionality
+        const modal = document.getElementById('comparison-modal');
+        const openBtn = document.getElementById('view-comparison-btn');
+        const closeBtn = document.getElementById('close-modal-btn');
+
+        const openModal = () => {
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+        };
+
+        const closeModal = () => {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        };
+
+        openBtn.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+        
+        // Close modal on escape key press
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+        
+        // Close modal on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+    </script>
+</body>
+</html>

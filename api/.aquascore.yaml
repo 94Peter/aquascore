@@ -1,0 +1,21 @@
+http:
+  port: 8081
+
+log:
+  level: debug
+  dev: true
+
+database:
+  uri: "mongodb://mongodb.dev.orb.local:27017"
+  db: "aquascore"
+  max_conn_idle_time: 10m
+  max_pool_size: 50
+  min_pool_size: 10
+
+grpc:
+  analysis:
+    addr: localhost:50051
+
+
+tracing:
+  endpoint: jaeger.tracing.orb.local:4318

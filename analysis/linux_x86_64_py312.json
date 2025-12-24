@@ -1,0 +1,3 @@
+Unknown flag [31m--target-platform[0m in global context
+Did you mean [36m--stats-format[0m, [36m--test-force[0m, or --test-report?
+Use `[32mpants help[0m` to get help.

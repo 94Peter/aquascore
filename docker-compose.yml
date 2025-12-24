@@ -1,0 +1,21 @@
+services:
+  analysis:
+    image: 94peter/aquascore-analysis:latest
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger.tracing.orb.local:4318/v1/traces
+  api:
+    image: 94peter/aquascore-api:latest
+    environment:
+      HTTP_PORT: 8081
+      LOG_LEVEL: debug
+      LOG_DEV: true
+      DATABASE_URI: mongodb://mongodb.dev.orb.local:27017
+      DATABASE_DB: aquascore
+      GRPC_ANALYSIS_ADDR: analysis:50051
+      TRACING_ENDPOINT: jaeger.tracing.orb.local:4318
+  frontend:
+    image: 94peter/aquascore-frontend:latest
+    environment:
+      API_TARGET: api:8081
+    ports:
+      - 8082:80

@@ -1,0 +1,45 @@
+[GLOBAL]
+pants_version = "2.30.0"
+backend_packages = [
+    "pants.backend.python",
+    "pants.backend.experimental.go",
+    "pants.backend.shell",      # frontend shell command
+    "pants.backend.docker",
+    "pants.backend.experimental.javascript", # Add JS backend for frontend
+]
+
+pants_ignore.add = [
+  "/analysis/env",
+  "/frontend/node_modules", # Ignore node_modules in frontend
+  "/frontend/dist", # Ignore dist in frontend
+]
+
+[source]
+root_patterns = [
+  "/api",
+  "/analysis",
+  "/frontend", # Add frontend root pattern
+]
+
+[python-bootstrap]
+search_path = [
+    "<PYENV>",
+]
+
+[python]
+# 明確指定使用 Python 3.12
+interpreter_constraints = ["==3.12.*"]
+# (選配) 建議同時啟用 lockfile，這能讓你的 CI 更穩定
+enable_resolves = true
+
+[python.resolves]
+# 更新為新的路徑
+python-default = "analysis/python-default.lock"
+
+[docker]
+use_buildx = true
+env_vars = [
+  "PATH",
+  "DOCKER_CONFIG",
+  "HOME",
+]

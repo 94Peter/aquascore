@@ -1,0 +1,416 @@
+openapi: 3.0.0
+info:
+  title: AquaScore API
+  description: API for the AquaScore Swimmer Performance Dashboard
+  version: "1.0.0"
+servers:
+  - url: /api/v1
+    description: Main API endpoint
+
+paths:
+  /athletes:
+    get:
+      summary: Get a list of all athletes
+      description: Retrieves a list of all unique athlete names present in the database.
+      tags:
+        - Data Retrieval
+      responses:
+        '200':
+          description: A successful response returning a list of athlete names.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  example: "林大頭"
+
+  /years:
+    get:
+      summary: Get a list of available competition years
+      description: Retrieves a list of all unique competition years present in the database.
+      tags:
+        - Data Retrieval
+      responses:
+        '200':
+          description: A successful response returning a list of years.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  example: "2024"
+
+  /competitions:
+    get:
+      summary: Get competitions for a specific year
+      description: Retrieves a list of competitions held in a given year.
+      tags:
+        - Data Retrieval
+      parameters:
+        - name: year
+          in: query
+          required: true
+          description: The year for which to retrieve competitions.
+          schema:
+            type: string
+            example: "2024"
+        - name: athlete
+          in: query
+          required: false
+          description: Filter competitions by a single athlete name.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A successful response returning a list of competitions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Competition'
+        '400':
+          description: Invalid year parameter.
+
+  /athletes/{athlete_name}/performance-overview:
+    get:
+      summary: Get performance overview for an athlete
+      description: |
+        Retrieves a detailed performance analysis for a specific athlete, broken down by event. 
+        It combines raw statistics with calculated metrics like stability, trend, and PB freshness.
+      tags:
+        - Performance
+      parameters:
+        - name: athlete_name
+          in: path
+          required: true
+          description: The name of the athlete to retrieve data for.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A successful response returning the performance overview.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventPerformance'
+        '404':
+          description: Athlete not found.
+
+  /athletes/{athlete_name}/races:
+    get:
+      summary: Get athlete's races in a competition
+      description: Retrieves all race results for a specific athlete in a given competition and year.
+      tags:
+        - Data Retrieval
+      parameters:
+        - name: athlete_name
+          in: path
+          required: true
+          description: The name of the athlete.
+          schema:
+            type: string
+        - name: competition_name
+          in: query
+          required: true
+          description: The name of the competition.
+          schema:
+            type: string
+        - name: year
+          in: query
+          required: true
+          description: The year of the competition.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A successful response returning a list of race results.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteRaceResult'
+        '400':
+          description: Invalid parameters.
+        '404':
+          description: Athlete or competition not found.
+
+  /race/{race_id}/comparison:
+    get:
+      summary: Get comparison for a single race
+      description: |
+        Retrieves a detailed comparison for a specific race, pitting a target athlete's result against other competitors in the same race and against the national and games records.
+      tags:
+        - Performance
+      parameters:
+        - name: race_id
+          in: path
+          required: true
+          description: The ID of the race to compare.
+          schema:
+            type: string
+        - name: athlete_name
+          in: query
+          required: true
+          description: The name of the athlete to filter the comparison by.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A successful response returning the result comparison.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultComparison'
+        '404':
+          description: Race not found.
+
+components:
+  schemas:
+    Competition:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "National University Games"
+
+    AthleteRaceResult:
+      type: object
+      properties:
+        race_id:
+          type: string
+          example: "6345d2f3b4d3e2a1b0e3d5a1"
+        event_name:
+          type: string
+          example: "Men's 50m Freestyle Final"
+        record:
+          type: number
+          format: float
+          example: 22.52
+        rank:
+          type: integer
+          example: 2
+        score:
+          type: integer
+          example: 0
+        note:
+          type: string
+          example: ""
+
+    # Schemas for Performance Overview
+    EventPerformance:
+      type: object
+      properties:
+        event_name:
+          type: string
+          description: The name of the swimming event (e.g., "50m Freestyle").
+          example: "50m Freestyle"
+        personal_best:
+          $ref: '#/components/schemas/PersonalBest'
+        analysis:
+          $ref: '#/components/schemas/Analysis'
+        recent_races:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecentRace'
+        charts:
+          $ref: '#/components/schemas/ChartData'
+    
+    PersonalBest:
+      type: object
+      properties:
+        time:
+          type: number
+          format: float
+          description: The record time.
+          example: 24.98
+        unit:
+          type: string
+          description: The unit of time for the record.
+          example: "s"
+        date:
+          type: string
+          format: date
+          description: The date the personal best was achieved.
+          example: "2024-03-20"
+
+    Analysis:
+      type: object
+      properties:
+        stability:
+          $ref: '#/components/schemas/StabilityMetric'
+        trend:
+          $ref: '#/components/schemas/TrendMetric'
+        pb_freshness:
+          type: object
+          properties:
+            days_since_pb:
+              type: integer
+              example: 266
+            label:
+              type: string
+              description: A qualitative label for how recent the PB is.
+              enum: ["hot_streak", "stable", "not_updated_recently"]
+              example: "not_updated_recently"
+
+    StabilityMetric:
+      type: object
+      properties:
+        value:
+          type: number
+          format: float
+          description: The coefficient of variation for stability.
+        unit:
+          type: string
+          example: "%"
+        label:
+          type: string
+          description: A qualitative label for the metric.
+          enum: ["high", "medium", "low"]
+          example: "medium"
+
+    TrendMetric:
+      type: object
+      properties:
+        value:
+          type: number
+          format: float
+          description: The time difference of recent trend vs PB.
+        unit:
+          type: string
+          example: "s"
+        label:
+          type: string
+          description: A qualitative label for the metric.
+          enum: ["improving", "stable", "declining"]
+          example: "stable"
+
+    RecentRace:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2024-10-19"
+        time:
+          type: number
+          format: float
+          example: 25.15
+        competition_name:
+          type: string
+          example: "National Games"
+
+    ChartData:
+      type: object
+      properties:
+        sparkline:
+          type: array
+          items:
+            type: number
+            format: float
+          description: A small array of recent results for a mini line chart.
+          example: [25.50, 25.30, 24.98, 25.15]
+        trend_chart:
+          type: object
+          properties:
+            dates:
+              type: array
+              items:
+                type: string
+                format: date
+            times:
+              type: array
+              items:
+                type: number
+                format: float
+            pb_line:
+              type: number
+              format: float
+              description: The value of the personal best to draw a horizontal line on the chart.
+              example: 24.98
+
+    # Schemas for Result Comparison
+    ResultComparison:
+      type: object
+      properties:
+        target_result:
+          $ref: '#/components/schemas/TargetResult'
+        records:
+          $ref: '#/components/schemas/RecordComparison'
+        competitor_comparison:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompetitorComparison'
+
+    TargetResult:
+      type: object
+      properties:
+        athlete_name:
+          type: string
+          example: "Athlete Chen"
+        record_time:
+          type: number
+          format: float
+          example: 22.52
+        rank:
+          type: integer
+          example: 2
+        competition_name:
+          type: string
+          example: "National Games"
+        event_name:
+          type: string
+          example: "Men's 50m Freestyle Final"
+        date:
+          type: string
+          format: date
+          example: "2024-10-19"
+          
+    RecordComparison:
+      type: object
+      properties:
+        national_record:
+          type: object
+          properties:
+            time:
+              type: number
+              format: float
+              example: 22.10
+            diff:
+              type: string
+              example: "+0.42"
+        games_record:
+          type: object
+          properties:
+            time:
+              type: number
+              format: float
+              example: 22.45
+            diff:
+              type: string
+              example: "+0.07"
+
+    CompetitorComparison:
+      type: object
+      properties:
+        rank:
+          type: integer
+        athlete_name:
+          type: string
+        record_time:
+          type: number
+          format: float
+        diff_from_target:
+          type: string
+          description: The time difference from the target athlete.
+          example: "-0.11"
+        diff_label:
+          type: string
+          description: A qualitative label for the time difference.
+          enum: ["far_ahead", "slightly_ahead", "your_result", "slightly_behind", "far_behind"]
+          example: "slightly_ahead"

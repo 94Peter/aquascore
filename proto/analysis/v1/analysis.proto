@@ -1,0 +1,134 @@
+syntax = "proto3";
+
+package analysis.v1;
+
+import "google/protobuf/timestamp.proto";
+
+
+// AnalysisService 定義了需要複雜計算的數據分析 RPC
+service AnalysisService {
+    // 分析運動員的整體表現 (PB, 趨勢, 穩定度等)
+    rpc AnalyzePerformanceOverview(AnalyzePerformanceOverviewRequest) returns (AnalyzePerformanceOverviewResponse);
+
+    // 分析單一成績與其他選手、紀錄的比較
+    rpc AnalyzeResultComparison(AnalyzeResultComparisonRequest) returns (AnalyzeResultComparisonResponse);
+}
+
+// --- 用於整體表現分析的訊息 ---
+
+// 傳入的單筆成績數據
+message PerformanceResult {
+    google.protobuf.Timestamp event_date = 1;
+    double result_time = 2;
+    string event_type = 3; // e.g., "50公尺自由式"
+    string competition_name = 4;
+}
+
+message AnalyzePerformanceOverviewRequest {
+    string athlete_name = 1; // 運動員名稱
+    repeated PerformanceResult results = 2; // 該運動員的所有成績列表 (可包含多個項目)
+}
+
+// 定義 PersonalBest 結構
+message PersonalBest {
+    double time = 1;
+    string unit = 2;
+    string date = 3; // "YYYY-MM-DD" string
+}
+
+// 定義 StabilityMetric 結構
+message StabilityMetric {
+    double value = 1;
+    string unit = 2;
+    string label = 3; // e.g., "high", "medium", "low"
+}
+
+// 定義 TrendMetric 結構
+message TrendMetric {
+    double value = 1;
+    string unit = 2;
+    string label = 3; // e.g., "improving", "stable", "declining"
+}
+
+// 定義 PBFreshness 結構
+message PBFreshness {
+    int32 days_since_pb = 1;
+    string label = 2; // e.g., "hot_streak", "stable", "not_updated_recently"
+}
+
+// 定義 AnalysisMetrics 結構
+message AnalysisMetrics {
+    StabilityMetric stability = 1;
+    TrendMetric trend = 2;
+    PBFreshness pb_freshness = 3;
+}
+
+// 定義 RecentRace 結構
+message RecentRace {
+    string date = 1; // "YYYY-MM-DD" string
+    double time = 2;
+    string competition_name = 3;
+}
+
+// 定義 TrendChart 結構
+message TrendChart {
+    repeated string dates = 1; // "YYYY-MM-DD" strings
+    repeated double times = 2;
+    double pb_line = 3;
+}
+
+// 定義 ChartData 結構
+message ChartData {
+    repeated double sparkline = 1;
+    TrendChart trend_chart = 2;
+}
+
+
+// 返回的單一項目表現分析結果
+message EventPerformanceAnalysis {
+    string event_name = 1;
+    PersonalBest personal_best = 2; // Use the new message
+    AnalysisMetrics analysis = 3; // Use the new message
+    repeated RecentRace recent_races = 4; // Use the new message
+    ChartData charts = 5; // Use the new message
+}
+
+message AnalyzePerformanceOverviewResponse {
+    repeated EventPerformanceAnalysis event_analyses = 1;
+}
+
+// --- 用於成績比較分析的訊息 ---
+
+// 傳入的單筆比賽成績
+message RaceResult {
+    string athlete_name = 1;
+    double record_time = 2; // 秒數
+    int32 rank = 3;         // 名次
+}
+
+// 傳入的紀錄標記 (全國紀錄/大會紀錄)
+message RecordMarks {
+    optional double national_record = 1;
+    optional double games_record = 2;
+}
+
+message AnalyzeResultComparisonRequest {
+    RaceResult target_result = 1;                   // 當前要比較的成績紀錄
+    repeated RaceResult competition_results = 2;    // 該場比賽所有選手的成績
+    RecordMarks records = 3;                        // 相關的紀錄
+}
+
+// 返回的單一選手成績對比結果
+message SingleResultComparison {
+    string athlete_name = 1;
+    double record_time = 2;
+    int32 rank = 3;
+    // 使用 optional，如果紀錄不存在，則客戶端不會收到該字段
+    optional double diff_from_national_record = 4; // 與全國紀錄的秒差
+    optional double diff_from_games_record = 5;    // 與大會紀錄的秒差
+    optional double diff_from_target = 6;          // 與目標選手的秒差
+}
+
+message AnalyzeResultComparisonResponse {
+    repeated SingleResultComparison results_comparison = 1;
+}
