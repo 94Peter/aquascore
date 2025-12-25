@@ -1,10 +1,11 @@
 package mongo
 
 import (
-	"aquascore/internal/db/mongo/models"
 	"context"
 	"errors"
 	"fmt"
+
+	"aquascore/internal/db/mongo/models"
 
 	"github.com/94peter/vulpes/db/mgo"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -26,22 +27,22 @@ func newCrawlLogStore() CrawlLogStore {
 
 type crawlLogStore struct{}
 
-func (s *crawlLogStore) SaveCrawlLog(ctx context.Context, crawlLog *models.CrawlLog) error {
+func (*crawlLogStore) SaveCrawlLog(ctx context.Context, crawlLog *models.CrawlLog) error {
 	_, err := mgo.Save(ctx, crawlLog)
 	if err != nil {
-		return fmt.Errorf("save crawl log error: %v", err)
+		return fmt.Errorf("save crawl log error: %w", err)
 	}
 	return nil
 }
 
-func (s *crawlLogStore) FindOneCrawlLog(ctx context.Context, q Query) (*models.CrawlLog, error) {
+func (*crawlLogStore) FindOneCrawlLog(ctx context.Context, q Query) (*models.CrawlLog, error) {
 	crawlLog := models.NewCrawlLog()
 	err := mgo.FindOne(ctx, crawlLog, q.Query())
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("find crawl log error: %v", err)
+		return nil, fmt.Errorf("find crawl log error: %w", err)
 	}
 	return crawlLog, nil
 }

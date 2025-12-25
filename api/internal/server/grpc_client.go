@@ -14,6 +14,7 @@ import (
 
 type GrpcClient interface {
 	analysisv1grpc.AnalysisServiceClient
+	Close() error
 }
 
 type grpcClient struct {
@@ -21,7 +22,7 @@ type grpcClient struct {
 	conn *grpc.ClientConn
 }
 
-func newGRPCClient(addr string) (*grpcClient, error) {
+func newGRPCClient(addr string) (GrpcClient, error) {
 	if addr == "" {
 		return nil, fmt.Errorf("ANALYSIS_SERVICE_ADDR is not set")
 	}
@@ -40,5 +41,10 @@ func newGRPCClient(addr string) (*grpcClient, error) {
 	client := analysisv1grpc.NewAnalysisServiceClient(conn)
 	return &grpcClient{
 		AnalysisServiceClient: client,
+		conn:                  conn,
 	}, nil
+}
+
+func (grpc *grpcClient) Close() error {
+	return grpc.conn.Close()
 }

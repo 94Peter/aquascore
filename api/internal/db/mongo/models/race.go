@@ -66,6 +66,6 @@ func (s *Race) SetId(id any) {
 	s.ID = oid
 }
 
-func (p *Race) Validate() error {
+func (*Race) Validate() error {
 	return nil
 }

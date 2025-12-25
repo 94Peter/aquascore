@@ -1,9 +1,10 @@
 package mongo
 
 import (
-	"aquascore/internal/db/mongo/models"
 	"context"
 	"fmt"
+
+	"aquascore/internal/db/mongo/models"
 
 	"github.com/94peter/vulpes/db/mgo"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -18,7 +19,8 @@ type RaceStore interface {
 	GetAthleteNames(ctx context.Context) ([]string, error)
 	GetYears(ctx context.Context) ([]string, error)
 	GetCompetitions(ctx context.Context, year string, athlete string) ([]string, error)
-	GetAthleteRaces(ctx context.Context, athleteName, competitionName, year string) ([]*models.AggrAthleteJoinRacesFilterByRace, error)
+	GetAthleteRaces(
+		ctx context.Context, athleteName, competitionName, year string) ([]*models.AggrAthleteJoinRacesFilterByRace, error)
 	GetAllAthleteRaces(ctx context.Context, athleteName string) ([]*models.AggrAthleteJoinRacesFilterByAthlete, error)
 	GetRaceWithResultsByID(ctx context.Context, raceID string) (*models.AggrRaceWithResult, error)
 }
@@ -98,7 +100,9 @@ func (rs *raceStore) GetCompetitions(ctx context.Context, year string, athlete s
 	return result, spanErrorHandler(nil, span)
 }
 
-func (rs *raceStore) GetAthleteRaces(ctx context.Context, athleteName, competitionName, year string) ([]*models.AggrAthleteJoinRacesFilterByRace, error) {
+func (rs *raceStore) GetAthleteRaces(
+	ctx context.Context, athleteName, competitionName, year string,
+) ([]*models.AggrAthleteJoinRacesFilterByRace, error) {
 	ctx, span := rs.startTracer(ctx, "RaceStore.GetAthleteRaces")
 	defer span.End()
 	aggr := models.NewAggrAthleteJoinRacesFilterByRace(athleteName)
@@ -109,7 +113,9 @@ func (rs *raceStore) GetAthleteRaces(ctx context.Context, athleteName, competiti
 	return result, spanErrorHandler(nil, span)
 }
 
-func (rs *raceStore) GetAllAthleteRaces(ctx context.Context, athleteName string) ([]*models.AggrAthleteJoinRacesFilterByAthlete, error) {
+func (rs *raceStore) GetAllAthleteRaces(
+	ctx context.Context, athleteName string,
+) ([]*models.AggrAthleteJoinRacesFilterByAthlete, error) {
 	ctx, span := rs.startTracer(ctx, "RaceStore.GetAllAthleteRaces")
 	defer span.End()
 	query := bson.M{

@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
 	"aquascore/internal/crawler"
 	"aquascore/internal/crawler/persistence"
-	mongodb "aquascore/internal/db/mongo"
+	"aquascore/internal/db/mongo"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // crawlerCmd represents the crawler command
@@ -26,7 +26,7 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		year, err := cmd.Flags().GetString("year")
 		if err != nil {
 			return fmt.Errorf("get target url fail: %w", err)
@@ -40,7 +40,7 @@ to quickly create a Cobra application.`,
 
 		// db connection
 		dbCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		closeFunc, err := mongodb.IniMongodb(
+		closeFunc, err := mongo.IniMongodb(
 			dbCtx,
 			viper.GetString("database.uri"),
 			viper.GetString("database.db"),
@@ -59,7 +59,7 @@ to quickly create a Cobra application.`,
 		cancel()
 
 		var crawlerPersistence crawler.Persistence
-		mongodb.InjectStore(func(s *mongodb.Stores) {
+		mongo.InjectStore(func(s *mongo.Stores) {
 			crawlerPersistence = persistence.NewMongoPersistence(s.RaceStore, s.CrawlLogStore)
 		})
 
@@ -69,10 +69,14 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			return fmt.Errorf("init ctsa crawler fail: %w", err)
 		}
-		err = crawler.Crawl()
+
+		crawlCtx, crawlCancel := context.WithCancel(context.Background())
+		defer crawlCancel()
+		err = crawler.Crawl(crawlCtx)
 		if err != nil {
 			return fmt.Errorf("crawler fail: %w", err)
 		}
+
 		return nil
 	},
 }

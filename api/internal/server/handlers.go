@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -8,19 +9,17 @@ import (
 	"time"
 
 	"aquascore/internal/db/mongo"
-
-	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"aquascore/internal/db/mongo/models"
 
 	analysisv1 "buf.build/gen/go/aqua/analysis/protocolbuffers/go/analysis/v1"
+	"github.com/gin-gonic/gin"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // APIHandler holds the dependencies for API handlers.
 type apiHandler struct {
 	raceStore  mongo.RaceStore
 	grpcClient GrpcClient
-	tracer     trace.Tracer
 }
 
 type AthleteRaceResult struct {
@@ -152,7 +151,19 @@ func (h *apiHandler) GetAthletePerformanceOverview(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve athlete races"})
 		return
 	}
+	req := mapRacesToAnalyzePerformanceOverviewRequest(athleteName, races)
+	res, err := h.grpcClient.AnalyzePerformanceOverview(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to analyze performance"})
+		return
+	}
+	c.JSON(http.StatusOK, mapAnalysisToResponse(res.EventAnalyses))
+}
 
+func mapRacesToAnalyzePerformanceOverviewRequest(
+	athleteName string,
+	races []*models.AggrAthleteJoinRacesFilterByAthlete,
+) *analysisv1.AnalyzePerformanceOverviewRequest {
 	performanceResults := make([]*analysisv1.PerformanceResult, 0, len(races))
 	appendCount := 0
 	for _, race := range races {
@@ -169,18 +180,15 @@ func (h *apiHandler) GetAthletePerformanceOverview(c *gin.Context) {
 	}
 	performanceResults = performanceResults[:appendCount]
 
-	req := &analysisv1.AnalyzePerformanceOverviewRequest{
+	return &analysisv1.AnalyzePerformanceOverviewRequest{
 		AthleteName: athleteName,
 		Results:     performanceResults,
 	}
+}
 
-	res, err := h.grpcClient.AnalyzePerformanceOverview(c.Request.Context(), req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to analyze performance"})
-		return
-	}
-	output := make([]map[string]any, 0, len(res.EventAnalyses))
-	for _, analysis := range res.EventAnalyses {
+func mapAnalysisToResponse(analyses []*analysisv1.EventPerformanceAnalysis) []map[string]any {
+	output := make([]map[string]any, 0, len(analyses))
+	for _, analysis := range analyses {
 		// mins := time.Duration(analysis.PersonalBest) / time.Minute
 		// secs := time.Duration(analysis.PersonalBest) % time.Minute / time.Second
 		recent_races := make([]map[string]any, 0, len(analysis.RecentRaces))
@@ -225,8 +233,7 @@ func (h *apiHandler) GetAthletePerformanceOverview(c *gin.Context) {
 			},
 		})
 	}
-
-	c.JSON(http.StatusOK, output)
+	return output
 }
 
 // GetRaceComparison handles the GET /race/:race_id/comparison endpoint.
@@ -244,10 +251,29 @@ func (h *apiHandler) GetRaceComparison(c *gin.Context) {
 		return
 	}
 
-	competitionResults := make([]*analysisv1.RaceResult, len(raceWithResult.Results))
+	req, err := mapRaceWithResultToAnalyzeResultComparisonRequest(athleteName, raceWithResult)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	res, err := h.grpcClient.AnalyzeResultComparison(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to analyze result comparison"})
+		return
+	}
+	c.JSON(http.StatusOK,
+		mapAnalyzeResultComparisonResponseToResponse(raceWithResult, req, res))
+}
+
+func mapRaceWithResultToAnalyzeResultComparisonRequest(
+	athleteName string,
+	race *models.AggrRaceWithResult,
+) (*analysisv1.AnalyzeResultComparisonRequest, error) {
+	competitionResults := make([]*analysisv1.RaceResult, len(race.Results))
 	var targetResult *analysisv1.RaceResult
 	var resultSize int
-	for _, result := range raceWithResult.Results {
+	for _, result := range race.Results {
 		if result.Record == 0 {
 			continue
 		}
@@ -260,7 +286,7 @@ func (h *apiHandler) GetRaceComparison(c *gin.Context) {
 		res := &analysisv1.RaceResult{
 			AthleteName: resultAthleteName,
 			RecordTime:  result.Record.Seconds(),
-			Rank:        int32(result.Rank),
+			Rank:        result.Rank,
 		}
 		var hasAdded bool
 		if result.Rank == 1 || result.Rank == 2 ||
@@ -280,29 +306,29 @@ func (h *apiHandler) GetRaceComparison(c *gin.Context) {
 		}
 	}
 	if targetResult == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "target athlete not found in this race"})
-		return
+		return nil, errors.New("target athlete not found in this race")
 	}
-	nationalRecord := raceWithResult.NationalRecord.Seconds()
-	gamesRecord := raceWithResult.GamesRecord.Seconds()
-	req := &analysisv1.AnalyzeResultComparisonRequest{
+	nationalRecord := race.NationalRecord.Seconds()
+	gamesRecord := race.GamesRecord.Seconds()
+	return &analysisv1.AnalyzeResultComparisonRequest{
 		TargetResult:       targetResult,
 		CompetitionResults: competitionResults[:resultSize],
 		Records: &analysisv1.RecordMarks{
 			NationalRecord: &nationalRecord,
 			GamesRecord:    &gamesRecord,
 		},
-	}
+	}, nil
+}
 
-	res, err := h.grpcClient.AnalyzeResultComparison(c.Request.Context(), req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to analyze result comparison"})
-		return
-	}
+func mapAnalyzeResultComparisonResponseToResponse(
+	race *models.AggrRaceWithResult,
+	req *analysisv1.AnalyzeResultComparisonRequest,
+	res *analysisv1.AnalyzeResultComparisonResponse,
+) map[string]any {
 	competitor_comparison := make([]map[string]any, 0, len(res.ResultsComparison)-1)
 	var nationalRecordDiff, gamesRecordDiff *float64
 	for _, comp := range res.ResultsComparison {
-		if comp.AthleteName == targetResult.AthleteName {
+		if comp.AthleteName == req.TargetResult.AthleteName {
 			nationalRecordDiff = comp.DiffFromNationalRecord
 			gamesRecordDiff = comp.DiffFromGamesRecord
 			continue
@@ -316,29 +342,27 @@ func (h *apiHandler) GetRaceComparison(c *gin.Context) {
 			"diff_label":       getDiffLabel(comp.DiffFromTarget),
 		})
 	}
-	output := map[string]any{
+	return map[string]any{
 		"target_result": map[string]any{
-			"athlete_name":     targetResult.AthleteName,
-			"record_time":      targetResult.RecordTime,
-			"rank":             targetResult.Rank,
-			"competition_name": raceWithResult.CompetitionName,
-			"event_name":       raceWithResult.EventName,
-			"date":             raceWithResult.Time.Format("2006-01-02"),
+			"athlete_name":     req.TargetResult.AthleteName,
+			"record_time":      req.TargetResult.RecordTime,
+			"rank":             req.TargetResult.Rank,
+			"competition_name": race.CompetitionName,
+			"event_name":       race.EventName,
+			"date":             race.Time.Format("2006-01-02"),
 		},
 		"records": map[string]any{
 			"national_record": map[string]any{
-				"time": nationalRecord,
+				"time": req.Records.NationalRecord,
 				"diff": nationalRecordDiff,
 			},
 			"games_record": map[string]any{
-				"time": gamesRecord,
+				"time": req.Records.NationalRecord,
 				"diff": gamesRecordDiff,
 			},
 		},
 		"competitor_comparison": competitor_comparison,
 	}
-
-	c.JSON(http.StatusOK, output)
 }
 
 func getDiffLabel(diff *float64) string {

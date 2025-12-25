@@ -3,10 +3,10 @@ package mongo
 import (
 	"context"
 
+	"aquascore/internal/db"
+
 	"github.com/94peter/vulpes/db/mgo"
 	"go.opentelemetry.io/otel"
-
-	"aquascore/internal/db"
 )
 
 type Stores struct {
@@ -16,9 +16,15 @@ type Stores struct {
 
 var store *Stores
 
+const (
+	minDBPoolSize = 50
+	maxDBPoolSize = 100
+)
+
 func IniMongodb(ctx context.Context, uri string, dbName string) (db.CloseDbFunc, error) {
 	tracer := otel.Tracer("Mongodb")
-	err := mgo.InitConnection(ctx, dbName, tracer, mgo.WithURI(uri), mgo.WithMinPoolSize(50), mgo.WithMaxPoolSize(100))
+	err := mgo.InitConnection(ctx, dbName, tracer,
+		mgo.WithURI(uri), mgo.WithMinPoolSize(minDBPoolSize), mgo.WithMaxPoolSize(maxDBPoolSize))
 	if err != nil {
 		return nil, err
 	}
@@ -33,9 +39,7 @@ func IniMongodb(ctx context.Context, uri string, dbName string) (db.CloseDbFunc,
 		RaceStore:     newRaceStore(raceStoreTracer),
 	}
 
-	return func(ctx context.Context) error {
-		return mgo.Close(ctx)
-	}, nil
+	return mgo.Close, nil
 }
 
 func InjectStore(f func(*Stores)) {

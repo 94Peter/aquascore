@@ -13,8 +13,8 @@ type Server struct {
 	grpcClient GrpcClient
 }
 
-// NewHttpServer creates a new Server instance, setting up API routes.
-func NewHttpServer(store *mongo.Stores, analysisServerAddr string) (*Server, error) {
+// NewHTTPServer creates a new Server instance, setting up API routes.
+func NewHTTPServer(store *mongo.Stores, analysisServerAddr string) (*Server, error) {
 	grpcClient, err := newGRPCClient(analysisServerAddr)
 	if err != nil {
 		return nil, err
@@ -34,4 +34,8 @@ func NewHttpServer(store *mongo.Stores, analysisServerAddr string) (*Server, err
 // Start runs the HTTP server on a specific address.
 func (s *Server) Start(addr string) error {
 	return s.router.Run(addr)
+}
+
+func (s *Server) Close() error {
+	return s.grpcClient.Close()
 }

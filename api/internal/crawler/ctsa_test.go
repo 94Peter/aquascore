@@ -19,9 +19,11 @@ type mockPersistence struct {
 func (m *mockPersistence) PersistRace(race *Race) error {
 	return m.persisRace(race)
 }
+
 func (m *mockPersistence) CrawlLog(url string) error {
 	return m.persistCrawlLog(url)
 }
+
 func (m *mockPersistence) IsCrawled(url string) (bool, error) {
 	return m.isCrawled(url)
 }
@@ -29,14 +31,16 @@ func (m *mockPersistence) IsCrawled(url string) (bool, error) {
 func TestAdd(t *testing.T) {
 	mockPersisce := &mockPersistence{
 		persisRace: func(race *Race) error {
-			fmt.Println(race.CompetitionName, race.EventName, len(race.Results), race.AgeGroup, race.Gender, race.Results[0].Name[0])
+			fmt.Println(race.CompetitionName,
+				race.EventName, len(race.Results),
+				race.AgeGroup, race.Gender, race.Results[0].Name[0])
 			assert.NotNil(t, race)
 			return nil
 		},
-		persistCrawlLog: func(url string) error {
+		persistCrawlLog: func(string) error {
 			return nil
 		},
-		isCrawled: func(url string) (bool, error) {
+		isCrawled: func(string) (bool, error) {
 			return false, nil
 		},
 	}
@@ -44,7 +48,7 @@ func TestAdd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(crawler.Crawl())
+	fmt.Println(crawler.Crawl(t.Context()))
 	assert.False(t, true)
 }
 
@@ -63,23 +67,24 @@ func Test_reg(t *testing.T) {
 func BenchmarkCrawl(b *testing.B) {
 	mockPersisce := &mockPersistence{
 		persisRace: func(race *Race) error {
-			fmt.Println(race.CompetitionName, race.EventName, len(race.Results), race.AgeGroup, race.Gender, race.Results[0].Name[0])
-			
+			fmt.Println(race.CompetitionName, race.EventName,
+				len(race.Results), race.AgeGroup, race.Gender, race.Results[0].Name[0])
+
 			return nil
 		},
-		persistCrawlLog: func(url string) error {
+		persistCrawlLog: func(string) error {
 			return nil
 		},
-		isCrawled: func(url string) (bool, error) {
+		isCrawled: func(string) (bool, error) {
 			return false, nil
 		},
 	}
-	for i := 0; i < b.N; i++ {
-		
-	crawler, err := NewCtsaCrawler(WithBaseURL(targetURL), withTest(true), WithPersistence(mockPersisce))
-	if err != nil {
-		b.Fatal(err)
-	}
-	fmt.Println(crawler.Crawl())
+
+	for range b.N {
+		crawler, err := NewCtsaCrawler(WithBaseURL(targetURL), withTest(true), WithPersistence(mockPersisce))
+		if err != nil {
+			b.Fatal(err)
+		}
+		fmt.Println(crawler.Crawl(b.Context()))
 	}
 }

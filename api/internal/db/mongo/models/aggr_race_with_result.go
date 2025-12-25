@@ -34,13 +34,13 @@ type AggrRaceWithResult struct {
 		Unit   string        `bson:"unit"`   // 單位
 		Name   []string      `bson:"name"`   // 選手姓名
 		Record time.Duration `bson:"record"` // 成績
-		Rank   int           `bson:"rank"`   // 名次
-		Score  int           `bson:"score"`  // 分數
+		Rank   int32         `bson:"rank"`   // 名次
+		Score  int32         `bson:"score"`  // 分數
 		Note   string        `bson:"note"`   // 備註
 	} `bson:"results"` // 結果
 }
 
-func (a *AggrRaceWithResult) GetPipeline(q bson.M) mongo.Pipeline {
+func (*AggrRaceWithResult) GetPipeline(q bson.M) mongo.Pipeline {
 	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: q}},
 		{

@@ -1,27 +1,30 @@
 package persistence
 
 import (
-	"aquascore/internal/crawler"
-	mongoStore "aquascore/internal/db/mongo"
-	"aquascore/internal/db/mongo/models"
 	"context"
 	"fmt"
 	"time"
 
+	"aquascore/internal/crawler"
+	"aquascore/internal/db/mongo"
+	"aquascore/internal/db/mongo/models"
+
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-func NewMongoPersistence(raceStore mongoStore.RaceStore, crawlLogStore mongoStore.CrawlLogStore) crawler.Persistence {
+const defaultTimeout = time.Second * 5
+
+func NewMongoPersistence(raceStore mongo.RaceStore, crawlLogStore mongo.CrawlLogStore) crawler.Persistence {
 	return &mongoPersistence{raceStore, crawlLogStore}
 }
 
 type mongoPersistence struct {
-	raceStore     mongoStore.RaceStore
-	crawlLogStore mongoStore.CrawlLogStore
+	raceStore     mongo.RaceStore
+	crawlLogStore mongo.CrawlLogStore
 }
 
 func (m *mongoPersistence) PersistRace(race *crawler.Race) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 	raceId, err := m.raceStore.SaveRace(ctx, raceToModelRace(race))
 	if err != nil {
@@ -39,7 +42,7 @@ func (m *mongoPersistence) PersistRace(race *crawler.Race) error {
 }
 
 func (m *mongoPersistence) CrawlLog(url string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 	crawlLog := models.NewCrawlLog()
 	crawlLog.Url = url
@@ -52,9 +55,9 @@ func (m *mongoPersistence) CrawlLog(url string) error {
 }
 
 func (m *mongoPersistence) IsCrawled(url string) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
-	crawlLog, err := m.crawlLogStore.FindOneCrawlLog(ctx, mongoStore.NewCrawlLogQueryByUrl(url))
+	crawlLog, err := m.crawlLogStore.FindOneCrawlLog(ctx, mongo.NewCrawlLogQueryByUrl(url))
 	if err != nil {
 		return false, fmt.Errorf("get crawl log fail: %w", err)
 	}

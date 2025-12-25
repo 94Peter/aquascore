@@ -21,8 +21,8 @@ type RaceResult struct {
 	Unit   string
 	Name   []string
 	Record time.Duration
-	Rank   int
-	Score  int
+	Rank   int32
+	Score  int32
 	Note   string
 }
 

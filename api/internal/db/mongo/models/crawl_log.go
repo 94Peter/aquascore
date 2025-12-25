@@ -53,6 +53,6 @@ func (s *CrawlLog) SetId(id any) {
 	s.ID = oid
 }
 
-func (p *CrawlLog) Validate() error {
+func (*CrawlLog) Validate() error {
 	return nil
 }

@@ -28,7 +28,7 @@ type AggrAthleteJoinRacesFilterByAthlete struct {
 	Note            string    `bson:"note"`
 }
 
-func (a *AggrAthleteJoinRacesFilterByAthlete) GetPipeline(q bson.M) mongo.Pipeline {
+func (*AggrAthleteJoinRacesFilterByAthlete) GetPipeline(q bson.M) mongo.Pipeline {
 	pipeline := mongo.Pipeline{
 		// Stage 1: $match - Filter the Competition Events
 		{

@@ -35,8 +35,8 @@ type RaceResult struct {
 	Unit      string        // 單位
 	Name      []string      // 選手姓名
 	Record    time.Duration // 成績
-	Rank      int           // 名次
-	Score     int           // 分數
+	Rank      int32         // 名次
+	Score     int32         // 分數
 	Note      string        // 備註
 	RaceId    bson.ObjectID `bson:"race_id,omitempty"` // 賽事ID
 }
@@ -56,6 +56,6 @@ func (s *RaceResult) SetId(id any) {
 	s.ID = oid
 }
 
-func (p *RaceResult) Validate() error {
+func (*RaceResult) Validate() error {
 	return nil
 }
