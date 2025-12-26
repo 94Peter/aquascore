@@ -37,10 +37,7 @@ func NewCtsaCrawler(opts ...Option) (*ctsaCrawler, error) {
 	crawler := &ctsaCrawler{}
 	var err error
 	for _, opt := range opts {
-		err := opt(crawler)
-		if err != nil {
-			return nil, fmt.Errorf("option setting fail: %w", err)
-		}
+		opt(crawler)
 	}
 	if crawler.persistence == nil {
 		return nil, errors.New("persistence is nil")
@@ -61,6 +58,9 @@ func NewCtsaCrawler(opts ...Option) (*ctsaCrawler, error) {
 }
 
 func (c *ctsaCrawler) getResponse(ctx context.Context, url string) (io.Reader, error) {
+	if c.mockGetResponse != nil {
+		return c.mockGetResponse(url)
+	}
 	myctx, cancel := context.WithTimeout(ctx, defaultDelay)
 	defer cancel()
 	req, err := http.NewRequestWithContext(myctx, "GET", url, nil)
@@ -89,10 +89,10 @@ func (c *ctsaCrawler) getResponse(ctx context.Context, url string) (io.Reader, e
 }
 
 type ctsaCrawler struct {
-	baseUrl     string
-	persistence Persistence
-	isTest      bool
-	client      *http.Client
+	baseUrl         string
+	persistence     Persistence
+	client          *http.Client
+	mockGetResponse func(url string) (io.Reader, error)
 }
 
 func (c *ctsaCrawler) Crawl(ctx context.Context) error {
@@ -111,9 +111,6 @@ func (c *ctsaCrawler) Crawl(ctx context.Context) error {
 			log.Printf("✅ POST 請求成功: %s", raceID.Name)
 		}
 		time.Sleep(apiSleepDuration)
-		if c.isTest {
-			break
-		}
 	}
 	return nil
 }
@@ -137,15 +134,6 @@ func (c *ctsaCrawler) getInitialData(ctx context.Context) (map[string]string, er
 	body, err := c.getResponse(ctx, c.baseUrl)
 	if err != nil {
 		return nil, fmt.Errorf("GET 請求失敗: %w", err)
-	}
-
-	if c.isTest {
-		u, _ := url.Parse(c.baseUrl)
-		storedCookies := c.client.Jar.Cookies(u)
-		fmt.Printf("Jar 中儲存的 Cookie 數量: %d\n", len(storedCookies))
-		if len(storedCookies) > 0 {
-			fmt.Printf("儲存的 Cookie: %s = %s\n", storedCookies[0].Name, storedCookies[0].Value)
-		}
 	}
 
 	doc, err := htmlquery.Parse(body)
@@ -252,7 +240,7 @@ func (c *ctsaCrawler) fetchRaceList(ctx context.Context, active activeInfo) ([]r
 	return c.parseRaceList(doc, active.Name), nil
 }
 
-func (c *ctsaCrawler) parseRaceList(doc *html.Node, activeName string) []raceInfo {
+func (c *ctsaCrawler) parseRaceList(doc *html.Node, competitionName string) []raceInfo {
 	xpath := "//table[@id='ctl00_ContentPlaceHolder1_GridView1']/tbody/tr[position() > 1]"
 	dataRows := htmlquery.Find(doc, xpath)
 	var races []raceInfo
@@ -278,7 +266,7 @@ func (c *ctsaCrawler) parseRaceList(doc *html.Node, activeName string) []raceInf
 
 		if absoluteURL != notApplicable && strings.TrimSpace(raceName) != "" {
 			races = append(races, raceInfo{
-				CompetitionName: activeName,
+				CompetitionName: competitionName,
 				RaceName:        strings.TrimSpace(raceName),
 				ScoreReportURL:  absoluteURL,
 			})
@@ -292,10 +280,6 @@ func (c *ctsaCrawler) processRaces(ctx context.Context, races []raceInfo) error 
 	semaphore := make(chan struct{}, maxConcurrency)
 	var wg sync.WaitGroup
 	errChan := make(chan error, 1)
-
-	if c.isTest && len(races) > 89 {
-		races = races[89:90]
-	}
 
 	for _, race := range races {
 		select {
@@ -411,41 +395,26 @@ func (b *raceBuilder) getRecord() (*raceRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-	re := regexp.MustCompile(`(\d{2}:\d{2}\.\d{2})`)
-	matches := re.FindAllString(text, -1)
-	if len(matches) == 0 {
-		return nil, fmt.Errorf("找不到時間紀錄: %s", text)
-	}
-	if len(matches) == 1 {
-		if strings.Contains(text, "大會紀錄") {
-			gameRecordStr := matches[0]
-			gameRecord, err := parseTimeDuration(gameRecordStr)
-			if err != nil {
-				return nil, fmt.Errorf("轉換大會紀錄失敗: %w", err)
-			}
-			return &raceRecord{gameRecord: gameRecord}, nil
-		} else if strings.Contains(text, "全國紀錄") {
-			nationalRecordStr := matches[0]
-			nationalRecord, err := parseTimeDuration(nationalRecordStr)
-			if err != nil {
-				return nil, fmt.Errorf("轉換全國紀錄失敗: %w", err)
-			}
-			return &raceRecord{nationalRecord: nationalRecord}, nil
+
+	var records raceRecord
+
+	gameRecordReg := regexp.MustCompile(`大會紀錄：\s*(\d{2}:\d{2}\.\d{2})`)
+	gameMatch := gameRecordReg.FindStringSubmatch(text)
+	const expectMatchSize = 2
+	if len(gameMatch) == expectMatchSize {
+		records.gameRecord, err = parseTimeDuration(gameMatch[1])
+		if err != nil {
+			return nil, fmt.Errorf("轉換大會紀錄失敗: %w", err)
 		}
 	}
 
-	var records raceRecord
-	gameRecordStr := matches[0]
-	nationalRecordStr := matches[1]
-	records.gameRecord, err = parseTimeDuration(gameRecordStr)
-	if err != nil {
-		return nil, fmt.Errorf("轉換大會紀錄失敗: %w", err)
-	}
-
-	// 2. 轉換全國紀錄
-	records.nationalRecord, err = parseTimeDuration(nationalRecordStr)
-	if err != nil {
-		return nil, fmt.Errorf("轉換全國紀錄失敗: %w", err)
+	nationalRecordReg := regexp.MustCompile(`全國紀錄：\s*(\d{2}:\d{2}\.\d{2})`)
+	nationalMatch := nationalRecordReg.FindStringSubmatch(text)
+	if len(nationalMatch) == expectMatchSize {
+		records.nationalRecord, err = parseTimeDuration(nationalMatch[1])
+		if err != nil {
+			return nil, fmt.Errorf("轉換全國紀錄失敗: %w", err)
+		}
 	}
 	return &records, nil
 }

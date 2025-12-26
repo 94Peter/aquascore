@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"aquascore/internal/db/mongo/models"
+	"aquascore/api/internal/db/mongo/models"
 
 	"github.com/94peter/vulpes/db/mgo"
 	"go.mongodb.org/mongo-driver/v2/bson"

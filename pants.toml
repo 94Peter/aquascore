@@ -3,6 +3,7 @@ pants_version = "2.30.0"
 backend_packages = [
     "pants.backend.python",
     "pants.backend.experimental.go",
+    "pants.backend.experimental.go.lint.golangci_lint",
     "pants.backend.shell",      # frontend shell command
     "pants.backend.docker",
     "pants.backend.experimental.javascript", # Add JS backend for frontend
@@ -14,12 +15,6 @@ pants_ignore.add = [
   "/frontend/dist", # Ignore dist in frontend
 ]
 
-[source]
-root_patterns = [
-  "/api",
-  "/analysis",
-  "/frontend", # Add frontend root pattern
-]
 
 [python-bootstrap]
 search_path = [
@@ -32,9 +27,14 @@ interpreter_constraints = ["==3.12.*"]
 # (選配) 建議同時啟用 lockfile，這能讓你的 CI 更穩定
 enable_resolves = true
 
+[python-repos]
+indexes.add = ["https://buf.build/gen/python"]
+
 [python.resolves]
 # 更新為新的路徑
-python-default = "analysis/python-default.lock"
+python-default = "python-default.lock"
+
+
 
 [docker]
 use_buildx = true
@@ -43,3 +43,8 @@ env_vars = [
   "DOCKER_CONFIG",
   "HOME",
 ]
+
+[golang]
+minimum_expected_version = "1.24.0"
+go_search_paths = ["/Users/peter/.asdf/installs/golang/1.24.0/go/bin"]
+cgo_enabled = false

@@ -34,7 +34,7 @@ func NewCrawlLog() *CrawlLog {
 type CrawlLog struct {
 	mgo.Index `bson:"-"`
 	ID        bson.ObjectID `bson:"_id"`
-	Url       string
+	URL       string
 	CreatedAt time.Time `bson:"createdAt"`
 }
 

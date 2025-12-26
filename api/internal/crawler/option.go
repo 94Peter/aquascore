@@ -1,24 +1,23 @@
 package crawler
 
-type Option func(*ctsaCrawler) error
+import "io"
+
+type Option func(*ctsaCrawler)
 
 func WithBaseURL(baseURL string) Option {
-	return func(c *ctsaCrawler) error {
+	return func(c *ctsaCrawler) {
 		c.baseUrl = baseURL
-		return nil
 	}
 }
 
 func WithPersistence(persistence Persistence) Option {
-	return func(c *ctsaCrawler) error {
+	return func(c *ctsaCrawler) {
 		c.persistence = persistence
-		return nil
 	}
 }
 
-func withTest(test bool) Option {
-	return func(c *ctsaCrawler) error {
-		c.isTest = test
-		return nil
+func withGetResponse(mock func(url string) (io.Reader, error)) Option {
+	return func(c *ctsaCrawler) {
+		c.mockGetResponse = mock
 	}
 }

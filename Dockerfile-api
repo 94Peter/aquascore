@@ -15,6 +15,8 @@ RUN go mod download
 
 COPY api/ ./api/
 
+RUN ls -R
+
 # 執行跨平台編譯：這會產出正確的 Linux ELF 格式
 # CGO_ENABLED=0 確保 100% 靜態編譯
 RUN CGO_ENABLED=0 go build -o /app/main ./api/main.go

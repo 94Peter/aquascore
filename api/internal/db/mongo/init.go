@@ -3,7 +3,7 @@ package mongo
 import (
 	"context"
 
-	"aquascore/internal/db"
+	"aquascore/api/internal/db"
 
 	"github.com/94peter/vulpes/db/mgo"
 	"go.opentelemetry.io/otel"

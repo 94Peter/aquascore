@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"aquascore/internal/crawler"
-	"aquascore/internal/db/mongo"
-	"aquascore/internal/db/mongo/models"
+	"aquascore/api/internal/crawler"
+	"aquascore/api/internal/db/mongo"
+	"aquascore/api/internal/db/mongo/models"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
@@ -45,7 +45,7 @@ func (m *mongoPersistence) CrawlLog(url string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 	crawlLog := models.NewCrawlLog()
-	crawlLog.Url = url
+	crawlLog.URL = url
 	crawlLog.CreatedAt = time.Now()
 	err := m.crawlLogStore.SaveCrawlLog(ctx, crawlLog)
 	if err != nil {

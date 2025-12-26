@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"aquascore/internal/crawler"
-	"aquascore/internal/crawler/persistence"
-	"aquascore/internal/db/mongo"
+	"aquascore/api/internal/crawler"
+	"aquascore/api/internal/crawler/persistence"
+	"aquascore/api/internal/db/mongo"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

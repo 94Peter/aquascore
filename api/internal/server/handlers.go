@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"aquascore/internal/db/mongo"
-	"aquascore/internal/db/mongo/models"
+	"aquascore/api/internal/db/mongo"
+	"aquascore/api/internal/db/mongo/models"
 
 	analysisv1 "buf.build/gen/go/aqua/analysis/protocolbuffers/go/analysis/v1"
 	"github.com/gin-gonic/gin"

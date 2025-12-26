@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"log"
 
-	"aquascore/internal/db/mongo"
-	"aquascore/internal/server"
+	"aquascore/api/internal/db/mongo"
+	"aquascore/api/internal/server"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"aquascore/internal/db/mongo"
+	"aquascore/api/internal/db/mongo"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"

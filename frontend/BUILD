@@ -46,3 +46,13 @@ files(
         "nginx.conf.template", # Include the Nginx template
     ],
 )
+
+# NOTE: Sources restricted from the default for javascript_sources due to conflict with
+#   - frontend/eslint.config.js:frontend-docker-context
+#   - frontend/postcss.config.js:frontend-docker-context
+#   - frontend:frontend-docker-context
+javascript_sources(
+    sources=[
+        "tailwind.config.js",
+    ],
+)
